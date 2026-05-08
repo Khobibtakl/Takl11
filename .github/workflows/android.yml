@@ -10,43 +10,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Get source code
+      # 1. Checkout
       - name: Checkout Source
         uses: actions/checkout@v4
 
       # 2. Java
-      - name: Set up JDK 21
+      - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'zulu'
+          java-version: "21"
+          distribution: "zulu"
 
       # 3. Node
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 4. Install dependencies
+      # 4. Install packages
       - name: Install Dependencies
         run: |
           npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      # 5. Build web app (important for white screen fix)
+      # 5. Build web
       - name: Build Web App
         run: |
           npm run build
 
           if [ ! -d "dist" ]; then
-            echo "ERROR: dist folder not found"
+            echo "dist folder not found"
             exit 1
           fi
 
-      # 6. Create capacitor config if missing
-      - name: Create Capacitor Config
+      # 6. Capacitor setup
+      - name: Setup Capacitor
         run: |
-          if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
+          if [ ! -f capacitor.config.json ] && [ ! -f capacitor.config.ts ]; then
             echo '{
               "appId": "khubaibtakl.helper.af",
               "appName": "همکار خبيب تکل",
@@ -54,15 +54,31 @@ jobs:
             }' > capacitor.config.json
           fi
 
-      # 7. Sync Android files
-      - name: Capacitor Sync
-        run: |
           npx cap add android || true
           npx cap copy android
           npx cap sync android
 
-      # 8. Fix AndroidManifest (network/white screen fix)
-      - name: Android Config Fix
+      # 7. Fix Kotlin conflict
+      - name: Fix Kotlin Conflict
+        run: |
+          cat >> android/build.gradle << 'EOF'
+
+          allprojects {
+              configurations.all {
+                  resolutionStrategy {
+                      force "org.jetbrains.kotlin:kotlin-stdlib:1.8.22"
+                      force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22"
+                      force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22"
+                  }
+
+                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk7"
+                  exclude group: "org.jetbrains.kotlin", module: "kotlin-stdlib-jdk8"
+              }
+          }
+          EOF
+
+      # 8. Android config
+      - name: Fix Android Config
         run: |
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' android/app/src/main/AndroidManifest.xml
 
@@ -71,7 +87,8 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew clean
+          ./gradlew assembleDebug --no-daemon
 
       # 10. Upload APK
       - name: Upload APK
