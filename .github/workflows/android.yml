@@ -20,26 +20,26 @@ jobs:
           java-version: '21'
           distribution: 'zulu'
 
-      # 2️⃣ Node Setup + Cache
+      # 2️⃣ Node Setup (No Cache)
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
+      # Changed from npm ci to npm install to fix the lock file error
       - name: Install Dependencies
         run: |
-          npm ci
+          npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets @capacitor/share @capacitor/filesystem
 
       - name: Build Web App
         run: npm run build
 
-      # 3️⃣ Capacitor Init (Correct App Name + Package)
+      # 3️⃣ Capacitor Init
       - name: Capacitor Sync
         run: |
           if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
-            npx cap init "همکار خبيب تکل" "khubaibtakl.help.af" --web-dir dist
+            npx cap init "همکار خبيب تکل" "af.khubaibtakl.help" --web-dir dist
           fi
           npx cap add android || true
           npx cap sync android
@@ -55,7 +55,7 @@ jobs:
             echo "logo.png not found, skipping icon generation."
           fi
 
-      # 5️⃣ Proper Android Permissions (Play Store Safe)
+      # 5️⃣ Proper Android Permissions
       - name: Inject Android Permissions
         run: |
           cd android/app/src/main
@@ -76,7 +76,7 @@ jobs:
 
           cat AndroidManifest.xml
 
-      # 6️⃣ Gradle Memory Optimization (RAM Promotion)
+      # 6️⃣ Gradle Memory Optimization
       - name: Optimize Gradle Memory
         run: |
           cd android
