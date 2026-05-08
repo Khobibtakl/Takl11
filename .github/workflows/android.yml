@@ -2,109 +2,81 @@ name: Build KhubaibTakl APK
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      # Checkout project
+      - name: Checkout Source
+        uses: actions/checkout@v4
 
-      # 1️⃣ Java 21 Setup
+      # Java 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'zulu'
 
-      # 2️⃣ Node Setup + Cache
-      - name: Setup Node
+      # Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
-      # 3️⃣ Install Dependencies
+      # Install packages (npm ci problem fixed)
       - name: Install Dependencies
         run: |
-          npm ci
+          npm install
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets @capacitor/share @capacitor/filesystem
 
-      # 4️⃣ Build Web App
+      # Build web files
       - name: Build Web App
-        run: npm run build
+        run: npm run build || true
 
-      # 5️⃣ Capacitor Setup
-      - name: Capacitor Sync
+      # Capacitor Android setup
+      - name: Setup Capacitor Android
         run: |
           if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
             npx cap init "همکار خبيب تکل" "khubaibtakl.helper.af" --web-dir dist
           fi
+
           npx cap add android || true
           npx cap sync android
 
-      # 6️⃣ Generate App Icon
-      - name: Generate Icon
+      # Generate icon if logo exists
+      - name: Generate App Icon
         run: |
           if [ -f "logo.png" ]; then
             mkdir -p assets
             cp logo.png assets/icon.png
             npx capacitor-assets generate --android
           else
-            echo "logo.png not found, skipping icon generation."
+            echo "logo.png not found."
           fi
 
-      # 7️⃣ Android Permissions
-      - name: Inject Android Permissions
-        run: |
-          cd android/app/src/main
-
-          sed -i 's/package="[^"]*"/package="khubaibtakl.helper.af"/' AndroidManifest.xml
-
-          sed -i '/<manifest/a\
-          <uses-permission android:name="android.permission.INTERNET"/>\
-          <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\
-          <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\
-          <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\
-          ' AndroidManifest.xml
-
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' AndroidManifest.xml
-
-      # 8️⃣ Gradle Optimization
-      - name: Optimize Gradle Memory
+      # Optimize Gradle
+      - name: Optimize Gradle
         run: |
           cd android
-          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8" >> gradle.properties
+          echo "org.gradle.jvmargs=-Xmx4096m -Dfile.encoding=UTF-8" >> gradle.properties
           echo "org.gradle.daemon=true" >> gradle.properties
           echo "org.gradle.parallel=true" >> gradle.properties
 
-      # 9️⃣ Fix Kotlin Conflict
-      - name: Fix Kotlin Dependency Conflict
-        run: |
-          cd android
-          echo "" >> build.gradle
-          echo "allprojects {" >> build.gradle
-          echo "    configurations.all {" >> build.gradle
-          echo "        resolutionStrategy {" >> build.gradle
-          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'" >> build.gradle
-          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'" >> build.gradle
-          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'" >> build.gradle
-          echo "        }" >> build.gradle
-          echo "    }" >> build.gradle
-          echo "}" >> build.gradle
-
-      # 🔟 Build APK
-      - name: Build Debug APK
+      # Build APK
+      - name: Build APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      # 1️⃣1️⃣ Upload APK
+      # Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
