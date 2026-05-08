@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-primary-border: var(--primary-border);
+}
+
+:root {
+  --primary: #9333ea;
+  --primary-hover: #a855f7;
+  --primary-light: rgba(168, 85, 247, 0.1);
+  --primary-border: rgba(168, 85, 247, 0.2);
+
+  --bg-canvas: #f9fafb;
+  --bg-surface: #ffffff;
+  --bg-header: #ffffff;
+  --text-strong: #111827;
+  --text-main: #374151;
+  --text-subtle: #6b7280;
+  --line-color: #e5e7eb;
+  --surface-hover: #f3f4f6;
+  --dot-color: rgba(0,0,0,0.05);
+  --ring-shine: rgba(0,0,0,0.05);
+}
+
+:root.dark {
+  --bg-canvas: #0f0f13;
+  --bg-surface: #1a1a24;
+  --bg-header: #15151e;
+  --text-strong: #f3f4f6;
+  --text-main: #e5e7eb;
+  --text-subtle: #9ca3af;
+  --line-color: #1f2937;
+  --surface-hover: #374151;
+  --dot-color: rgba(255,255,255,0.04);
+  --ring-shine: rgba(255,255,255,0.05);
+}
+
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  background-color: var(--bg-canvas);
+}
