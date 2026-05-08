@@ -612,7 +612,7 @@ export default function App() {
                     </div>
                   )}
 
-                  <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed opacity-90" style={{ backgroundColor: 'var(--bg-canvas)', backgroundImage: 'radial-gradient(var(--dot-color) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
+                  <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 opacity-90" style={{ backgroundColor: 'var(--bg-canvas)', backgroundImage: 'radial-gradient(var(--dot-color) 1px, transparent 1px)', backgroundSize: '24px 24px' }}>
                     <AnimatePresence initial={false}>
                       {messages.map((msg, idx) => (
                         <motion.div
