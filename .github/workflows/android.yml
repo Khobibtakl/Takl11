@@ -23,7 +23,7 @@ jobs:
       # 2️⃣ Node Setup + Cache
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:
+        with:ت
           node-version: 20
           cache: 'npm'
 
@@ -39,7 +39,7 @@ jobs:
       - name: Capacitor Sync
         run: |
           if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
-            npx cap init "همکار خبيب تکل" "khubaibtakl.help.af" --web-dir dist
+            npx cap init "همکار خبيب تکل" "khubaibtakl.helper.af" --web-dir dist
           fi
           npx cap add android || true
           npx cap sync android
@@ -61,7 +61,7 @@ jobs:
           cd android/app/src/main
 
           # Set correct package name
-          sed -i 's/package="[^"]*"/package="af.obaidapp.asmaulhusna"/' AndroidManifest.xml
+          sed -i 's/package="[^"]*"/package="khubaibtakl.helper.af"/' AndroidManifest.xml
 
           # Add permissions safely
           sed -i '/<manifest/a\
@@ -93,9 +93,9 @@ jobs:
           echo "allprojects {" >> build.gradle
           echo "    configurations.all {" >> build.gradle
           echo "        resolutionStrategy {" >> build.gradle
-          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'" >> build.gradle
-          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'" >> build.gradle
-          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'" >> build.gradle
+          echo "            force '"'"'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'"'"'" >> build.gradle
+          echo "            force '"'"'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'"'"'" >> build.gradle
+          echo "            force '"'"'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'"'"'" >> build.gradle
           echo "        }" >> build.gradle
           echo "    }" >> build.gradle
           echo "}" >> build.gradle
@@ -113,4 +113,3 @@ jobs:
         with:
           name: KhubaibTakl-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
-
