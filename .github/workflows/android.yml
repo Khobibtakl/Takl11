@@ -2,14 +2,15 @@ name: Build KhubaibTakl APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
     permissions:
       contents: write
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,19 +24,21 @@ jobs:
       # 2️⃣ Node Setup + Cache
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:ت
+        with:
           node-version: 20
           cache: 'npm'
 
+      # 3️⃣ Install Dependencies
       - name: Install Dependencies
         run: |
           npm ci
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets @capacitor/share @capacitor/filesystem
 
+      # 4️⃣ Build Web App
       - name: Build Web App
         run: npm run build
 
-      # 3️⃣ Capacitor Init (Correct App Name + Package)
+      # 5️⃣ Capacitor Setup
       - name: Capacitor Sync
         run: |
           if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
@@ -44,7 +47,7 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
-      # 4️⃣ Generate App Icon
+      # 6️⃣ Generate App Icon
       - name: Generate Icon
         run: |
           if [ -f "logo.png" ]; then
@@ -55,15 +58,13 @@ jobs:
             echo "logo.png not found, skipping icon generation."
           fi
 
-      # 5️⃣ Proper Android Permissions (Play Store Safe)
+      # 7️⃣ Android Permissions
       - name: Inject Android Permissions
         run: |
           cd android/app/src/main
 
-          # Set correct package name
           sed -i 's/package="[^"]*"/package="khubaibtakl.helper.af"/' AndroidManifest.xml
 
-          # Add permissions safely
           sed -i '/<manifest/a\
           <uses-permission android:name="android.permission.INTERNET"/>\
           <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\
@@ -71,21 +72,17 @@ jobs:
           <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\
           ' AndroidManifest.xml
 
-          # Enable cleartext safely
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' AndroidManifest.xml
 
-          cat AndroidManifest.xml
-
-      # 6️⃣ Gradle Memory Optimization (RAM Promotion)
+      # 8️⃣ Gradle Optimization
       - name: Optimize Gradle Memory
         run: |
           cd android
           echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8" >> gradle.properties
           echo "org.gradle.daemon=true" >> gradle.properties
           echo "org.gradle.parallel=true" >> gradle.properties
-          echo "org.gradle.configureondemand=true" >> gradle.properties
 
-      # 7️⃣ Fix Kotlin Conflict
+      # 9️⃣ Fix Kotlin Conflict
       - name: Fix Kotlin Dependency Conflict
         run: |
           cd android
@@ -93,21 +90,21 @@ jobs:
           echo "allprojects {" >> build.gradle
           echo "    configurations.all {" >> build.gradle
           echo "        resolutionStrategy {" >> build.gradle
-          echo "            force '"'"'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'"'"'" >> build.gradle
-          echo "            force '"'"'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'"'"'" >> build.gradle
-          echo "            force '"'"'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'"'"'" >> build.gradle
+          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'" >> build.gradle
+          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'" >> build.gradle
+          echo "            force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'" >> build.gradle
           echo "        }" >> build.gradle
           echo "    }" >> build.gradle
           echo "}" >> build.gradle
 
-      # 8️⃣ Build APK
+      # 🔟 Build APK
       - name: Build Debug APK
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
-      # 9️⃣ Upload APK
+      # 1️⃣1️⃣ Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
