@@ -29,9 +29,9 @@ jobs:
 
       - name: Sync with Capacitor
         run: |
-          # د عمرې لارښود نوم او خپل Package ID مو ورکړ
-          npx cap init "د اذکارو ټولګه" "com.obaidapp.azkaar.muslim" --web-dir dist
-          npx cap add android
+          # څرنګه چې capacitor.config.ts فایل شتون لري نو د init کمانډ ته اړتیا نشته.
+          # یوازې انډرایډ پلاتفورم اضافه کوو (که مخکې نه وي) او سینک کوو یې.
+          npx cap add android || echo "Android platform already added."
           npx cap sync android
 
       # ۲. د آیکن برخه (اصلاح شوې)
