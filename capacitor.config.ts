@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'khubaibtakl.helper.af',
-  appName: 'همکار خبيب تکل',
+  appId: 'com.obaidapp.azkaar.muslim',
+  appName: '  د اذکارو ټولګه',
   webDir: 'dist',
   plugins: {
     StatusBar: {
