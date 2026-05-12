@@ -1,5 +1,4 @@
-name: Build KhubaibTakl APK
-
+name: Build Android APK
 on:
   push:
     branches: [ main ]
@@ -9,83 +8,60 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-    
     steps:
       - uses: actions/checkout@v4
 
-      # 1️⃣ Java 21 Setup
-      - name: Set up JDK 21
+      # ۱. جاوا ۲۱ (د Gradle د ستونزو لپاره)
+      - name: set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'zulu'
 
-      # 2️⃣ Node Setup (No Cache)
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      # Changed from npm ci to npm install to fix the lock file error
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
           npm install
+          # د Capacitor اړین کتابتونونه انسټالول
           npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/assets @capacitor/share @capacitor/filesystem
 
       - name: Build Web App
         run: npm run build
 
-      # 3️⃣ Capacitor Init
-      - name: Capacitor Sync
+      - name: Sync with Capacitor
         run: |
-          if [ ! -f capacitor.config.ts ] && [ ! -f capacitor.config.json ]; then
-            npx cap init "همکار خبيب تکل" "af.khubaibtakl.help" --web-dir dist
-          fi
-          npx cap add android || true
+          # د عمرې لارښود نوم او خپل Package ID مو ورکړ
+          npx cap init "د اذکارو ټولګه" "com.obaidapp.azkaar.muslim" --web-dir dist
+          npx cap add android
           npx cap sync android
 
-      # 4️⃣ Generate App Icon
+      # ۲. د آیکن برخه (اصلاح شوې)
       - name: Generate Icon
         run: |
           if [ -f "logo.png" ]; then
             mkdir -p assets
+            # دلته مو logo.png په icon.png بدل کړ ترڅو capacitor-assets یې وپیژني
             cp logo.png assets/icon.png
             npx capacitor-assets generate --android
           else
-            echo "logo.png not found, skipping icon generation."
+            echo "Warning: logo.png not found, skipping icon generation."
           fi
 
-      # 5️⃣ Proper Android Permissions
-      - name: Inject Android Permissions
+      # ۳. د انټرنیټ او سټوریج اجازې (Permissions)
+      # یادونه: ستاسو په اپلیکیشن کې آډیو له انټرنیټ څخه غږول کیږي، نو د انټرنیټ اجازه ډېره اړینه ده.
+      - name: Inject Permissions and Fix Name
         run: |
           cd android/app/src/main
-
-          # Set correct package name
-          sed -i 's/package="[^"]*"/package="af.obaidapp.asmaulhusna"/' AndroidManifest.xml
-
-          # Add permissions safely
-          sed -i '/<manifest/a\
-          <uses-permission android:name="android.permission.INTERNET"/>\
-          <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>\
-          <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>\
-          <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>\
-          ' AndroidManifest.xml
-
-          # Enable cleartext safely
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' AndroidManifest.xml
-
+          
+          # په AndroidManifest.xml کې د انټرنیټ او سټوریج اجازې ورزیاتوو
+          sed -i 's/<application/<uses-permission android:name="android.permission.INTERNET" \/>\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"\/>\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" \/>\n    <application/g' AndroidManifest.xml
+          
+          # د ډاونلوډ لپاره "ClearText" او "Legacy Storage" فعاله کوو
+          sed -i 's/<application/<application android:usesCleartextTraffic="true" android:requestLegacyExternalStorage="true"/g' AndroidManifest.xml
+          
+          # د ډاډ لپاره د فایل چاپول
           cat AndroidManifest.xml
 
-      # 6️⃣ Gradle Memory Optimization
-      - name: Optimize Gradle Memory
-        run: |
-          cd android
-          echo "org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8" >> gradle.properties
-          echo "org.gradle.daemon=true" >> gradle.properties
-          echo "org.gradle.parallel=true" >> gradle.properties
-          echo "org.gradle.configureondemand=true" >> gradle.properties
-
-      # 7️⃣ Fix Kotlin Conflict
+      # ۴. د Kotlin د تکراري فایلونو ستونزه (Fix)
       - name: Fix Kotlin Dependency Conflict
         run: |
           cd android
@@ -100,16 +76,14 @@ jobs:
           echo "    }" >> build.gradle
           echo "}" >> build.gradle
 
-      # 8️⃣ Build APK
-      - name: Build Debug APK
+      - name: Build Android APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew assembleDebug
 
-      # 9️⃣ Upload APK
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: KhubaibTakl-APK
+          name: Umrah-Guide-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
