@@ -51,3 +51,90 @@ ${documentText}
   return fullResponse;
 }
 
+export async function extractTextFromImageStream(
+  base64Image: string,
+  mimeType: string,
+  prompt: string,
+  onChunk: (chunk: string) => void
+): Promise<string> {
+  const responseStream = await ai.models.generateContentStream({
+    model: 'gemini-3-flash-preview',
+    contents: [
+      {
+        role: 'user',
+        parts: [
+          {
+            inlineData: {
+              data: base64Image,
+              mimeType,
+            },
+          },
+          { text: prompt },
+        ],
+      },
+    ],
+    config: {
+      temperature: 0.2, // Low temp for more accurate OCR
+    },
+  });
+
+  let fullResponse = '';
+  for await (const chunk of responseStream) {
+    if (chunk.text) {
+      fullResponse += chunk.text;
+      onChunk(fullResponse);
+    }
+  }
+
+  return fullResponse;
+}
+
+export async function chatWithImageStream(
+  base64Image: string,
+  mimeType: string,
+  history: ChatMessage[], // Full history including the newest user message
+  extractedText: string,
+  onChunk: (chunk: string) => void
+): Promise<string> {
+  const contents: any[] = [
+    {
+      role: 'user',
+      parts: [
+        {
+          inlineData: {
+            data: base64Image,
+            mimeType,
+          },
+        },
+        { text: `[System Context: The user has uploaded an image. Here is the extracted text for reference: \n${extractedText || 'No text found in image.'}\n\nPlease help the user with any queries about this image.]` },
+      ]
+    },
+  ];
+
+  for (const msg of history) {
+     contents.push({
+        role: msg.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: msg.content }]
+     });
+  }
+
+  const responseStream = await ai.models.generateContentStream({
+    model: 'gemini-3-flash-preview',
+    contents: contents,
+    config: {
+      systemInstruction: 'You are an advanced AI vision assistant. You help users analyze the image they provided. Be helpful, accurate, and respond in the user\'s language.',
+      temperature: 0.7,
+    },
+  });
+
+  let fullResponse = '';
+  for await (const chunk of responseStream) {
+    if (chunk.text) {
+      fullResponse += chunk.text;
+      onChunk(fullResponse);
+    }
+  }
+
+  return fullResponse;
+}
+

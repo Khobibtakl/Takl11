@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UploadCloud, FileText, Download, Loader2, ArrowRight, BookOpen, Send, Bot, User, Trash2, LayoutDashboard, MessageSquare, Settings, LogOut, Info, ShieldCheck, Phone, Mail, MessageCircle, Menu, X } from 'lucide-react';
+import { UploadCloud, FileText, Download, Loader2, ArrowRight, BookOpen, Send, Bot, User, Trash2, LayoutDashboard, MessageSquare, Settings, LogOut, Info, ShieldCheck, Phone, Mail, MessageCircle, Menu, X, Camera } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { extractTextFromFile, downloadTextAsFile } from './lib/file-utils';
 import { chatWithDocumentStream, ChatMessage } from './services/geminiService';
@@ -8,6 +8,7 @@ import { themes } from './themes';
 import { App as CapacitorApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
 import { LoginScreen } from './components/LoginScreen';
+import { SmartScan } from './components/SmartScan';
 
 export interface ChatSession {
   id: string;
@@ -20,7 +21,7 @@ export interface ChatSession {
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
 
-  const [activeMenu, setActiveMenu] = useState<'files' | 'chat' | 'settings'>('files');
+  const [activeMenu, setActiveMenu] = useState<'files' | 'chat' | 'scan' | 'settings'>('files');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTheme, setActiveTheme] = useState(themes[0]);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -299,7 +300,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[var(--bg-canvas)] text-[var(--text-strong)] font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden" dir="rtl">
+    <div className="flex flex-col md:flex-row h-[100dvh] bg-[var(--bg-canvas)] text-[var(--text-strong)] font-sans selection:bg-indigo-100 selection:text-indigo-900 overflow-hidden" dir="rtl">
       {/* Background Decor */}
       <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-200/40 rounded-full blur-[120px]" />
@@ -360,20 +361,26 @@ export default function App() {
             icon={<LayoutDashboard className="w-5 h-5" />} 
             label="اسناد او فایلونه" 
             isActive={activeMenu === 'files'} 
-            onClick={() => setActiveMenu('files')} 
+            onClick={() => { setActiveMenu('files'); setIsDrawerOpen(false); }} 
+          />
+          <MenuButton 
+            icon={<Camera className="w-5 h-5" />} 
+            label="هوښیار سکن" 
+            isActive={activeMenu === 'scan'} 
+            onClick={() => { setActiveMenu('scan'); setIsDrawerOpen(false); }} 
           />
           <MenuButton 
             icon={<MessageSquare className="w-5 h-5" />} 
             label="هوښیار چټ" 
             isActive={activeMenu === 'chat'} 
-            onClick={() => setActiveMenu('chat')} 
+            onClick={() => { setActiveMenu('chat'); setIsDrawerOpen(false); }} 
             disabled={!documentText}
           />
           <MenuButton 
             icon={<Settings className="w-5 h-5" />} 
             label="ترتیبات" 
             isActive={activeMenu === 'settings'} 
-            onClick={() => setActiveMenu('settings')} 
+            onClick={() => { setActiveMenu('settings'); setIsDrawerOpen(false); }} 
           />
           
           <div className="mt-auto pt-6 border-t border-[var(--line-color)]/60">
@@ -381,7 +388,7 @@ export default function App() {
                icon={<LogOut className="w-5 h-5 text-red-400" />} 
                label="وتل" 
                isActive={false} 
-               onClick={() => setShowExitModal(true)} 
+               onClick={() => { setShowExitModal(true); setIsDrawerOpen(false); }} 
              />
           </div>
         </div>
@@ -389,8 +396,8 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 relative z-10 flex flex-col w-full h-full overflow-hidden">
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 flex justify-center">
-          <div className="w-full max-w-4xl h-full flex flex-col">
+        <div className="flex-1 overflow-y-auto p-0 md:p-4 flex justify-center">
+          <div className="w-full h-full flex flex-col">
             
             <AnimatePresence mode="wait">
               {/* === FILES TAB === */}
@@ -400,7 +407,7 @@ export default function App() {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
-                  className="flex-1 flex flex-col items-center justify-center min-h-0 py-8"
+                  className="flex-1 flex flex-col items-center justify-center min-h-0 py-8 px-4"
                 >
                   <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold text-[var(--text-strong)] mb-3">فایل اپلوډ کړئ</h2>
@@ -707,6 +714,19 @@ export default function App() {
                       د هوښیار چټ (AI) معلومات ممکن کله ناکله تیروتنې ولري. مهرباني وکړئ مهم معلومات بیا کتنه وکړئ.
                     </p>
                   </div>
+                </motion.div>
+              )}
+
+              {/* === SCAN TAB === */}
+              {activeMenu === 'scan' && (
+                <motion.div 
+                  key="scan-tab"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="flex-1 flex flex-col items-center justify-center min-h-0 w-full"
+                >
+                  <SmartScan />
                 </motion.div>
               )}
 
