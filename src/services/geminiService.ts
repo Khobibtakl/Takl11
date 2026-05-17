@@ -5,6 +5,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+  imageUrl?: string;
 }
 
 export async function chatWithDocumentStream(
@@ -87,6 +88,48 @@ export async function extractTextFromImageStream(
   }
 
   return fullResponse;
+}
+
+export async function generateOrEditImage(
+  prompt: string,
+  base64Image?: string,
+  mimeType?: string
+): Promise<{imageUrl: string; text?: string}> {
+  const parts: any[] = [];
+  if (base64Image && mimeType) {
+     parts.push({
+        inlineData: { data: base64Image, mimeType: mimeType }
+     });
+  }
+  parts.push({ text: prompt });
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.1-flash-image-preview',
+    contents: {
+       parts: parts
+    },
+    config: {
+      imageConfig: {
+         aspectRatio: "1:1",
+         imageSize: "1K"
+      }
+    }
+  });
+
+  let imageUrl = '';
+  let text = '';
+  for (const part of response.candidates?.[0]?.content?.parts || []) {
+     if (part.inlineData) {
+        imageUrl = `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+     } else if (part.text) {
+        text += part.text;
+     }
+  }
+  
+  if (!imageUrl) {
+     throw new Error("هیڅ انځور ونه موندل شو. مهرباني وکړئ بیا هڅه وکړئ."); // No image found.
+  }
+  return { imageUrl, text };
 }
 
 export async function chatWithImageStream(

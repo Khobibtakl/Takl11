@@ -356,36 +356,40 @@ export default function App() {
           </button>
         </div>
 
-        <div className="flex-1 flex flex-col px-3 md:px-4 gap-2 overflow-y-auto">
+        <div className="flex-1 flex flex-col px-3 md:px-4 gap-2 overflow-y-auto pb-4">
           <MenuButton 
             icon={<LayoutDashboard className="w-5 h-5" />} 
-            label="اسناد او فایلونه" 
+            label="فایلونه او اسناد" 
+            subLabel="PDF او خطي اسنادو شننه"
             isActive={activeMenu === 'files'} 
             onClick={() => { setActiveMenu('files'); setIsDrawerOpen(false); }} 
           />
           <MenuButton 
             icon={<Camera className="w-5 h-5" />} 
             label="هوښیار سکن" 
+            subLabel="له انځور څخه متن ایستل"
             isActive={activeMenu === 'scan'} 
             onClick={() => { setActiveMenu('scan'); setIsDrawerOpen(false); }} 
           />
           <MenuButton 
             icon={<MessageSquare className="w-5 h-5" />} 
-            label="هوښیار چټ" 
+            label="له سند سره چټ" 
+            subLabel="د خپل سند په اړه وپوښتئ"
             isActive={activeMenu === 'chat'} 
             onClick={() => { setActiveMenu('chat'); setIsDrawerOpen(false); }} 
             disabled={!documentText}
           />
-          <MenuButton 
-            icon={<Settings className="w-5 h-5" />} 
-            label="ترتیبات" 
-            isActive={activeMenu === 'settings'} 
-            onClick={() => { setActiveMenu('settings'); setIsDrawerOpen(false); }} 
-          />
           
-          <div className="mt-auto pt-6 border-t border-[var(--line-color)]/60">
+          <div className="mt-auto pt-4 border-t border-[var(--line-color)]/60 flex flex-col gap-2">
+            <MenuButton 
+              icon={<Settings className="w-5 h-5" />} 
+              label="ترتیبات" 
+              subLabel="رنګونه او اپلیکیشن بدلول"
+              isActive={activeMenu === 'settings'} 
+              onClick={() => { setActiveMenu('settings'); setIsDrawerOpen(false); }} 
+            />
              <MenuButton 
-               icon={<LogOut className="w-5 h-5 text-red-400" />} 
+               icon={<LogOut className="w-5 h-5 text-red-500" />} 
                label="وتل" 
                isActive={false} 
                onClick={() => { setShowExitModal(true); setIsDrawerOpen(false); }} 
@@ -503,18 +507,27 @@ export default function App() {
                                  </span>
                               </div>
                             )}
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFile(null);
-                                setDocumentText('');
-                                setMessages([]);
-                              }}
-                              className="mt-8 flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-red-400 bg-red-500/10 hover:bg-red-500/100/20 rounded-xl transition-colors shrink-0"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              د فایل ړنګول او نوی ټاکل
-                            </button>
+                            <div className="flex gap-2 w-full mt-6 justify-center">
+                              <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-medium text-white bg-primary hover:bg-primary-hover rounded-xl shadow-sm transition-all focus:ring-4 focus:ring-primary-border flex-1"
+                              >
+                                <UploadCloud className="w-4 h-4" />
+                                نوی فایل وټاکئ
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setFile(null);
+                                  setDocumentText('');
+                                  setMessages([]);
+                                }}
+                                className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-red-500 bg-red-500/10 hover:bg-red-500/20 rounded-xl transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                ړنګول
+                              </button>
+                            </div>
                           </motion.div>
                         )}
                       </AnimatePresence>
@@ -538,16 +551,22 @@ export default function App() {
                             }}
                             className="w-full flex items-center justify-between p-4 bg-[var(--bg-canvas)] border border-[var(--line-color)] rounded-2xl hover:border-primary-light transition-colors text-right group"
                           >
-                            <div className="flex items-center gap-4 overflow-hidden">
+                            <div className="flex items-center gap-4 overflow-hidden flex-1">
                               <div className="w-12 h-12 rounded-xl bg-primary-light/50 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
                                 <MessageCircle className="w-6 h-6" />
                               </div>
-                              <div className="flex flex-col truncate">
+                              <div className="flex flex-col truncate items-start">
                                 <span className="font-semibold text-[var(--text-strong)] truncate text-base">{session.fileName}</span>
-                                <span className="text-sm text-[var(--text-subtle)] truncate mt-0.5">{new Date(session.date).toLocaleString('fa-AF')}</span>
+                                <span className="text-sm border min-w-0 border-transparent text-[var(--text-subtle)] truncate mt-0.5">{new Date(session.date).toLocaleString('fa-AF')}</span>
                               </div>
                             </div>
-                            <ArrowRight className="w-5 h-5 text-[var(--text-subtle)] group-hover:text-primary transition-colors rotate-180 shrink-0" />
+                            <div className="flex items-center gap-2 shrink-0">
+                               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary text-sm font-semibold bg-primary-light/40 group-hover:bg-primary group-hover:text-white transition-colors">
+                                  <span>خلاصول</span>
+                                  <ArrowRight className="w-4 h-4 rotate-180" />
+                               </div>
+                               <ArrowRight className="sm:hidden w-5 h-5 text-[var(--text-subtle)] group-hover:text-primary transition-colors rotate-180 shrink-0" />
+                            </div>
                           </motion.button>
                         ))}
                       </div>
@@ -966,12 +985,14 @@ export default function App() {
 function MenuButton({ 
   icon, 
   label, 
+  subLabel,
   isActive, 
   onClick,
   disabled = false
 }: { 
   icon: React.ReactNode; 
   label: string; 
+  subLabel?: string;
   isActive: boolean; 
   onClick: () => void;
   disabled?: boolean;
@@ -981,17 +1002,28 @@ function MenuButton({
       onClick={onClick}
       disabled={disabled}
       className={`
-        w-full flex items-center justify-center md:justify-start gap-4 px-3 py-3 md:py-3.5 rounded-2xl transition-all font-medium
+        w-full flex-col md:flex-row flex items-start md:items-center py-3 px-4 rounded-2xl transition-all
         ${disabled ? 'opacity-50 cursor-not-allowed text-[var(--text-subtle)]' : 
           isActive 
-            ? 'bg-primary-light text-primary-hover shadow-sm ring-1 ring-primary-border' 
-            : 'text-[var(--text-subtle)] hover:bg-[var(--bg-canvas)] hover:text-[var(--text-strong)]'
+            ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.02]' 
+            : 'text-[var(--text-strong)] hover:bg-[var(--surface-hover)] hover:scale-[1.01]'
         }
       `}
       title={label}
     >
-      <div className={`${isActive ? 'text-primary-hover' : 'text-[var(--text-subtle)]'} transition-colors`}>{icon}</div>
-      <span className="hidden md:block text-[15px]">{label}</span>
+      <div className={`flex items-center gap-3 w-full ${!isActive && 'text-[var(--text-subtle)] group-hover:text-primary'}`}>
+        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${isActive ? 'bg-white/20' : 'bg-[var(--bg-canvas)]'}`}>
+          {icon}
+        </div>
+        <div className="flex flex-col items-start flex-1 text-right overflow-hidden">
+          <span className="font-bold text-[14px] truncate w-full">{label}</span>
+          {subLabel && (
+            <span className={`text-[11px] font-medium truncate w-full ${isActive ? 'text-white/80' : 'text-[var(--text-subtle)]'}`}>
+              {subLabel}
+            </span>
+          )}
+        </div>
+      </div>
     </button>
   );
 }
