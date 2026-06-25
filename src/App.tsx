@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UploadCloud, FileText, Download, Loader2, ArrowRight, BookOpen, Send, Bot, User, Trash2, LayoutDashboard, MessageSquare, Settings, LogOut, Info, ShieldCheck, Phone, Mail, MessageCircle, Menu, X, Camera } from 'lucide-react';
+import { UploadCloud, FileText, Download, Loader2, ArrowRight, BookOpen, Send, Bot, User, Trash2, LayoutDashboard, MessageSquare, Settings, LogOut, Info, ShieldCheck, Phone, Mail, MessageCircle, Menu, X, Camera, Search, Database, Upload, History, Check } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { extractTextFromFile, downloadTextAsFile } from './lib/file-utils';
 import { chatWithDocumentStream, ChatMessage } from './services/geminiService';
 import { themes } from './themes';
 import { App as CapacitorApp } from '@capacitor/app';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { LoginScreen } from './components/LoginScreen';
+import { LandingPage } from './components/LandingPage';
 import { SmartScan } from './components/SmartScan';
 
 export interface ChatSession {
@@ -21,10 +21,20 @@ export interface ChatSession {
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
 
-  const [activeMenu, setActiveMenu] = useState<'files' | 'chat' | 'scan' | 'settings'>('files');
+  const [activeMenu, setActiveMenu] = useState<'files' | 'chat' | 'scan' | 'settings' | 'recent'>('files');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeTheme, setActiveTheme] = useState(themes[0]);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Auto-clear toast
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => setToastMessage(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
 
   // Handle dark mode class
   useEffect(() => {
@@ -285,7 +295,7 @@ export default function App() {
     return (
       <>
         {!showSplash && (
-          <LoginScreen 
+          <LandingPage 
             onLoginSuccess={() => {
               localStorage.setItem('isLoggedIn', 'true');
               setIsLoggedIn(true);
@@ -370,6 +380,13 @@ export default function App() {
             subLabel="له انځور څخه متن ایستل"
             isActive={activeMenu === 'scan'} 
             onClick={() => { setActiveMenu('scan'); setIsDrawerOpen(false); }} 
+          />
+          <MenuButton 
+            icon={<History className="w-5 h-5" />} 
+            label="وروستي اسناد" 
+            subLabel="پخواني او ذخیره شوي فایلونه"
+            isActive={activeMenu === 'recent'} 
+            onClick={() => { setActiveMenu('recent'); setIsDrawerOpen(false); }} 
           />
           <MenuButton 
             icon={<MessageSquare className="w-5 h-5" />} 
@@ -532,45 +549,6 @@ export default function App() {
                         )}
                       </AnimatePresence>
                     </div>
-                    
-                    {/* Previous Sessions */}
-                    {sessions.length > 0 && (
-                      <div className="mt-6 w-full max-w-xl mx-auto space-y-3">
-                        <h3 className="text-lg font-bold tracking-tight text-[var(--text-strong)] px-2 mb-4">وروستي تنظیم شوي فایلونه</h3>
-                        {sessions.map((session) => (
-                          <motion.button 
-                            key={session.id}
-                            whileHover={{ scale: 1.01 }}
-                            whileTap={{ scale: 0.99 }}
-                            onClick={() => {
-                               currentSessionId.current = session.id;
-                               setFile(new File([], session.fileName));
-                               setDocumentText(session.documentText);
-                               setMessages(session.messages);
-                               setActiveMenu('chat');
-                            }}
-                            className="w-full flex items-center justify-between p-4 bg-[var(--bg-canvas)] border border-[var(--line-color)] rounded-2xl hover:border-primary-light transition-colors text-right group"
-                          >
-                            <div className="flex items-center gap-4 overflow-hidden flex-1">
-                              <div className="w-12 h-12 rounded-xl bg-primary-light/50 flex items-center justify-center text-primary shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                                <MessageCircle className="w-6 h-6" />
-                              </div>
-                              <div className="flex flex-col truncate items-start">
-                                <span className="font-semibold text-[var(--text-strong)] truncate text-base">{session.fileName}</span>
-                                <span className="text-sm border min-w-0 border-transparent text-[var(--text-subtle)] truncate mt-0.5">{new Date(session.date).toLocaleString('fa-AF')}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                               <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-primary text-sm font-semibold bg-primary-light/40 group-hover:bg-primary group-hover:text-white transition-colors">
-                                  <span>خلاصول</span>
-                                  <ArrowRight className="w-4 h-4 rotate-180" />
-                               </div>
-                               <ArrowRight className="sm:hidden w-5 h-5 text-[var(--text-subtle)] group-hover:text-primary transition-colors rotate-180 shrink-0" />
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </motion.div>
               )}
@@ -733,6 +711,260 @@ export default function App() {
                       د هوښیار چټ (AI) معلومات ممکن کله ناکله تیروتنې ولري. مهرباني وکړئ مهم معلومات بیا کتنه وکړئ.
                     </p>
                   </div>
+                </motion.div>
+              )}
+
+              {/* === RECENT TAB === */}
+              {activeMenu === 'recent' && (
+                <motion.div 
+                  key="recent-tab"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto max-w-4xl w-full mx-auto"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div className="text-right">
+                      <h2 className="text-2xl md:text-3xl font-bold text-[var(--text-strong)] flex items-center gap-3">
+                        <History className="w-8 h-8 text-primary" />
+                        <span>وروستي تنظيم شوي دوسیې</span>
+                      </h2>
+                      <p className="text-[var(--text-subtle)] text-sm mt-1">تاسو کولی شئ خپل پخواني معلومات په آفلاین بڼه وگورئ او اداره یې کړئ.</p>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                       <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
+                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                         <span>داخلي حافظې ته آفلاین لاسرسی</span>
+                       </span>
+                    </div>
+                  </div>
+
+                  {/* Backup and Storage Center Card */}
+                  <div className="bg-[var(--bg-surface)] rounded-2xl md:rounded-3xl p-5 md:p-6 shadow-sm ring-1 ring-[var(--ring-shine)] border border-[var(--line-color)]/60 mb-6 text-right">
+                    <div className="flex items-center justify-between border-b border-[var(--line-color)]/60 pb-4 mb-5 flex-wrap gap-4">
+                      <div className="flex items-center gap-3">
+                        <Database className="w-5 h-5 text-primary-hover" />
+                        <span className="font-bold text-[var(--text-strong)] text-base">د پاڼې د شاتړ (Backup) او حافظې سمبالښت</span>
+                      </div>
+                      <div className="text-xs text-[var(--text-subtle)] font-mono" dir="ltr">
+                        Storage Est: <span className="font-bold text-primary-hover">{(JSON.stringify(sessions).length / 1024).toFixed(1)} KB</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                      <div className="p-4 bg-[var(--bg-canvas)] rounded-2xl border border-[var(--line-color)]/40 text-center flex flex-col justify-center items-center">
+                        <span className="text-xs font-semibold text-[var(--text-subtle)] mb-1">ټول کارول شوي اسناد</span>
+                        <span className="text-3xl font-extrabold text-primary-hover">{sessions.length}</span>
+                      </div>
+                      <div className="p-4 bg-[var(--bg-canvas)] rounded-2xl border border-[var(--line-color)]/40 text-center flex flex-col justify-center items-center">
+                        <span className="text-xs font-semibold text-[var(--text-subtle)] mb-1">ټول پوښتل شوي سوالونه</span>
+                        <span className="text-3xl font-extrabold text-indigo-400">
+                          {sessions.reduce((acc, curr) => acc + (curr.messages ? curr.messages.length : 0), 0)}
+                        </span>
+                      </div>
+                      <div className="p-4 bg-[var(--bg-canvas)] rounded-2xl border border-[var(--line-color)]/40 text-center flex flex-col justify-center items-center">
+                        <span className="text-xs font-semibold text-[var(--text-subtle)] mb-1">د خوندیتوب حالت</span>
+                        <span className="text-sm font-bold text-emerald-400">په موبایل کې بند (Offline)</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row gap-3">
+                      {/* Export All Backup */}
+                      <button
+                        onClick={() => {
+                          if (sessions.length === 0) {
+                            alert("تاسو هیڅ پخوانی معلومات نلرئ د شاتړ ډاونلوډ لپاره.");
+                            return;
+                          }
+                          const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sessions, null, 2));
+                          const downloadAnchor = document.createElement('a');
+                          downloadAnchor.setAttribute("href", dataStr);
+                          downloadAnchor.setAttribute("download", `habib_takal_backup_${Date.now()}.json`);
+                          document.body.appendChild(downloadAnchor);
+                          downloadAnchor.click();
+                          downloadAnchor.remove();
+                          setToastMessage("✓ د ټولو معلوماتو شاتړ (JSON) فایل کښته شو!");
+                        }}
+                        className="flex-1 flex items-center justify-center gap-2 px-5 py-3.5 bg-primary text-white text-sm font-bold rounded-xl hover:bg-primary-hover shadow-sm transition-all"
+                      >
+                        <Download className="w-4 h-4 shrink-0" />
+                        <span>د ټولو معلوماتو بندي (JSON) فایل ډاونلوډ</span>
+                      </button>
+
+                      {/* Import Backup */}
+                      <div className="flex-1 relative">
+                        <input
+                          type="file"
+                          id="backup-import-input"
+                          accept=".json"
+                          className="hidden"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              const fileReader = new FileReader();
+                              fileReader.onload = (event) => {
+                                try {
+                                  const importedData = JSON.parse(event.target?.result as string);
+                                  if (Array.isArray(importedData)) {
+                                    const isValid = importedData.every(item => item.id && item.fileName && Array.isArray(item.messages));
+                                    if (isValid) {
+                                      setSessions(prev => {
+                                        const merged = [...prev];
+                                        importedData.forEach((imp: any) => {
+                                          const existsIdx = merged.findIndex(v => v.id === imp.id);
+                                          if (existsIdx >= 0) {
+                                            merged[existsIdx] = imp;
+                                          } else {
+                                            merged.unshift(imp);
+                                          }
+                                        });
+                                        localStorage.setItem('khubaibSessions', JSON.stringify(merged));
+                                        return merged;
+                                      });
+                                      setToastMessage("✓ شاتړ فایل لوډ شو او معلومات بیرته راستانه شول!");
+                                    } else {
+                                      alert("تېروتنه: تایید نشو؛ فایل سټنډرډ شاتړ دوسیې نه لري.");
+                                    }
+                                  } else {
+                                    alert("تېروتنه: د ټاکل شوي دوتنې بڼه د منلو نده.");
+                                  }
+                                } catch (err) {
+                                  alert("د شاتړ فایل لوستلو کې تخنیکي ستونزه وه.");
+                                }
+                              };
+                              fileReader.readAsText(e.target.files[0]);
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => document.getElementById('backup-import-input')?.click()}
+                          className="w-full flex items-center justify-center gap-2 px-5 py-3.5 bg-[var(--surface-hover)] hover:bg-gray-700 text-[var(--text-main)] hover:text-white text-sm font-bold rounded-xl border border-[var(--line-color)] transition-colors"
+                        >
+                          <Upload className="w-4 h-4 shrink-0" />
+                          <span>د پخواني شاتړ فایل پورته کول (Restore Backup)</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Search and Filters */}
+                  <div className="relative mb-5 text-right" dir="rtl">
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-[var(--text-subtle)]">
+                      <Search className="w-5 h-5" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="ایا کوم ځانګړی دوسیه یا سند لټوئ؟ د فایل نوم دلته ولیکئ..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-4 pr-11 py-3.5 bg-[var(--bg-surface)]/80 backdrop-blur rounded-2xl border border-[var(--line-color)] outline-none focus:ring-2 focus:ring-primary-hover text-[var(--text-strong)] text-sm placeholder-gray-400 text-right"
+                    />
+                    {searchTerm && (
+                      <button 
+                        onClick={() => setSearchTerm('')}
+                        className="absolute inset-y-0 left-0 pl-4 flex items-center text-xs text-[var(--text-subtle)] hover:text-primary"
+                      >
+                        پاکول
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sessions Grid */}
+                  {sessions.filter(s => s.fileName.toLowerCase().includes(searchTerm.toLowerCase())).length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {sessions
+                        .filter(s => s.fileName.toLowerCase().includes(searchTerm.toLowerCase()))
+                        .map((session) => (
+                          <div 
+                            key={session.id}
+                            className="bg-[var(--bg-surface)] border border-[var(--line-color)]/60 hover:border-primary-light transition-all rounded-2xl p-5 flex flex-col justify-between group shadow-sm text-right"
+                          >
+                            <div className="text-right">
+                              <div className="flex items-start justify-between gap-3 mb-3 flex-row-reverse">
+                                <div className="flex items-center gap-3 overflow-hidden text-right flex-row-reverse">
+                                  <div className="w-10 h-10 rounded-xl bg-primary-light/60 flex items-center justify-center text-primary shrink-0">
+                                    <FileText className="w-5 h-5" />
+                                  </div>
+                                  <div className="flex flex-col overflow-hidden items-start text-right">
+                                    <h4 className="font-bold text-[var(--text-strong)] truncate text-base text-right w-full" title={session.fileName}>
+                                      {session.fileName}
+                                    </h4>
+                                    <span className="text-xs text-[var(--text-subtle)] mt-0.5">
+                                      {new Date(session.date).toLocaleString('fa-AF')}
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-600/10 text-indigo-400 border border-indigo-500/10 shrink-0">
+                                  {session.messages ? session.messages.filter(m => m.role === 'user').length : 0} کلمو چټ
+                                </span>
+                              </div>
+
+                              {session.documentText && (
+                                <p className="text-xs text-[var(--text-subtle)] line-clamp-3 bg-[var(--bg-canvas)] p-3 rounded-xl border border-[var(--line-color)]/60 text-right leading-relaxed mb-4 overflow-hidden">
+                                  {session.documentText}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="flex gap-2 flex-wrap border-t border-[var(--line-color)]/60 pt-4 mt-auto">
+                              <button
+                                onClick={() => {
+                                  currentSessionId.current = session.id;
+                                  setFile(new File([], session.fileName));
+                                  setDocumentText(session.documentText);
+                                  setMessages(session.messages);
+                                  setActiveMenu('chat');
+                                }}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-primary hover:bg-primary-hover text-white text-[13px] font-bold rounded-xl shadow-xs transition-colors shrink-0"
+                              >
+                                <span>خبرې پرانیزه</span>
+                                <ArrowRight className="w-3.5 h-3.5 rotate-180" />
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(session.documentText);
+                                  setToastMessage("✓ د فایل متن کاپي شو!");
+                                }}
+                                className="px-3 py-2 bg-[var(--surface-hover)] hover:bg-gray-700 text-[var(--text-main)] hover:text-white text-[13px] font-medium rounded-xl transition-colors shrink-0"
+                              >
+                                کاپي متن
+                              </button>
+
+                              <button
+                                onClick={() => {
+                                  const confirmDelete = window.confirm("ایا تاسو باوري یاست چې دا فایل او د چټ ټول تاریخ حذف کوئ؟");
+                                  if (confirmDelete) {
+                                    setSessions(prev => {
+                                      const updatedList = prev.filter(s => s.id !== session.id);
+                                      localStorage.setItem('khubaibSessions', JSON.stringify(updatedList));
+                                      return updatedList;
+                                    });
+                                    setToastMessage("✓ فایل په بریالیتوب حذف شو.");
+                                    if (currentSessionId.current === session.id) {
+                                      setFile(null);
+                                      setDocumentText('');
+                                      setMessages([]);
+                                    }
+                                  }
+                                }}
+                                className="px-3 py-2 bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 text-[13px] font-medium rounded-xl transition-all shrink-0"
+                              >
+                                حذف کول
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-[var(--bg-surface)] rounded-2xl md:rounded-3xl border border-[var(--line-color)]/60 p-8 shadow-inner text-right">
+                      <History className="w-12 h-12 text-[var(--text-subtle)] mx-auto mb-3 opacity-40 animate-pulse" />
+                      <h4 className="text-lg font-bold text-[var(--text-strong)] mb-1 text-center">هیڅ پخوانی سند نشته!</h4>
+                      <p className="text-sm text-[var(--text-subtle)] max-w-sm mx-auto text-center leading-relaxed">
+                        {searchTerm ? "خپل لټون بدل کړئ؛ د دې نوم سره هیڅ فایل شتون نلري." : "کله چې تاسو نوي سندونه اپلوډ کړئ، ستاسو ټول معلومات په محلي ډول په زېرمه کې په خوندي بڼه خوندي کیږي."}
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -977,6 +1209,22 @@ export default function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Floating Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 30, scale: 0.95 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 md:left-6 md:right-auto md:translate-x-0 z-[100] bg-emerald-600 text-white font-bold text-sm px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 max-w-sm border border-emerald-500 text-right"
+            dir="rtl"
+          >
+            <Check className="w-5 h-5 shrink-0 bg-white/25 p-0.5 rounded-full" />
+            <span>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1002,7 +1250,7 @@ function MenuButton({
       onClick={onClick}
       disabled={disabled}
       className={`
-        w-full flex-col md:flex-row flex items-start md:items-center py-3 px-4 rounded-2xl transition-all
+        w-full flex items-center py-3 px-4 rounded-2xl transition-all
         ${disabled ? 'opacity-50 cursor-not-allowed text-[var(--text-subtle)]' : 
           isActive 
             ? 'bg-primary text-white shadow-md shadow-primary/20 scale-[1.02]' 

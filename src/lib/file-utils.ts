@@ -1,11 +1,8 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
 
-// Load locally via Vite URL to avoid dynamic import errors from CDNs
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
-).toString();
+// Set worker source reliably via UNPKG to avoid bundler resolution issues in sandboxes
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version || '5.6.205'}/build/pdf.worker.min.mjs`;
 
 export async function extractTextFromFile(file: File, onProgress?: (percent: number) => void): Promise<string> {
   const extension = file.name.split('.').pop()?.toLowerCase();

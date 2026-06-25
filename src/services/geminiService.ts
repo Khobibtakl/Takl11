@@ -36,7 +36,7 @@ ${documentText}
   ];
 
   const responseStream = await ai.models.generateContentStream({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.5-flash',
     contents: contents as any,
     config: chatConfig,
   });
@@ -59,7 +59,7 @@ export async function extractTextFromImageStream(
   onChunk: (chunk: string) => void
 ): Promise<string> {
   const responseStream = await ai.models.generateContentStream({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.5-flash',
     contents: [
       {
         role: 'user',
@@ -104,14 +104,13 @@ export async function generateOrEditImage(
   parts.push({ text: prompt });
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash-image-preview',
+    model: 'gemini-2.5-flash-image',
     contents: {
        parts: parts
     },
     config: {
       imageConfig: {
-         aspectRatio: "1:1",
-         imageSize: "1K"
+         aspectRatio: "1:1"
       }
     }
   });
@@ -162,7 +161,7 @@ export async function chatWithImageStream(
   }
 
   const responseStream = await ai.models.generateContentStream({
-    model: 'gemini-3-flash-preview',
+    model: 'gemini-3.5-flash',
     contents: contents,
     config: {
       systemInstruction: 'You are an advanced AI vision assistant. You help users analyze the image they provided. Be helpful, accurate, and respond in the user\'s language.',
